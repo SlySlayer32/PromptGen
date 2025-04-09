@@ -1,5 +1,4 @@
-FROM python:3.9.18-slim
-
+FROM python:3.11-slim-bookworm
 LABEL maintainer="CompLinguistics <support@comp-linguistics.io>"
 LABEL org.opencontainers.image.source="https://github.com/comp-linguistics/transform-action"
 LABEL org.opencontainers.image.description="Transforms text into formal computational linguistics style"
@@ -39,4 +38,4 @@ ENTRYPOINT ["python", "/app/src/entrypoint.py"]
 
 # Add health check
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
-  CMD python -c "import requests; requests.get('http://localhost:8000/health')" || exit 1
+    CMD python -c "import requests; requests.get('http://localhost:8000/health')" || exit 1
