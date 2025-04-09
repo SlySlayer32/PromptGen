@@ -1,0 +1,83 @@
+name: 'Computational Linguistics Transformer'
+description: 'Transform text into formal computational linguistics style with configurable intensity'
+branding:
+  icon: 'edit-3'
+  color: 'blue'
+
+inputs:
+  intensity:
+    description: 'Transformation intensity (0.0-1.0)'
+    required: true
+    default: '0.7'
+  
+  file_patterns:
+    description: 'File patterns to include (comma-separated)'
+    required: false
+    default: '*.md,*.txt,*.rst'
+  
+  exclude_patterns:
+    description: 'File patterns to exclude (comma-separated)'
+    required: false
+    default: 'node_modules/**,vendor/**,dist/**'
+  
+  output_method:
+    description: 'Output method (in-place, pr, comment, artifact)'
+    required: true
+    default: 'artifact'
+  
+  custom_terminology:
+    description: 'Path to custom terminology JSON file (paid tiers only)'
+    required: false
+  
+  api_token:
+    description: 'API token for authentication and billing'
+    required: true
+  
+  tier_level:
+    description: 'Subscription tier level'
+    required: true
+  
+  github_token:
+    description: 'GitHub token for PR and comment creation'
+    required: false
+    default: ''
+
+outputs:
+  processed_files:
+    description: 'Number of files processed'
+  
+  transformed_files:
+    description: 'Number of files transformed'
+  
+  transformed_words:
+    description: 'Number of words transformed'
+  
+  transformed_chars:
+    description: 'Number of characters transformed'
+  
+  output_dir:
+    description: 'Directory containing transformed files (for artifact output)'
+  
+  transformation_report:
+    description: 'Summary of transformation results'
+
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
+  args:
+    - '--intensity'
+    - ${{ inputs.intensity }}
+    - '--file-patterns'
+    - ${{ inputs.file_patterns }}
+    - '--exclude-patterns'
+    - ${{ inputs.exclude_patterns }}
+    - '--output-method'
+    - ${{ inputs.output_method }}
+    - '--custom-terminology'
+    - ${{ inputs.custom_terminology }}
+    - '--api-token'
+    - ${{ inputs.api_token }}
+    - '--tier-level'
+    - ${{ inputs.tier_level }}
+    - '--github-token'
+    - ${{ inputs.github_token }}
