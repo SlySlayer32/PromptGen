@@ -1,0 +1,30 @@
+name: 'Report Usage Action'
+description: 'Report usage metrics for billing purposes'
+inputs:
+  api_token:
+    description: 'API token for authentication'
+    required: true
+  files_processed:
+    description: 'Number of files processed'
+    required: false
+    default: '0'
+  words_transformed:
+    description: 'Number of words transformed'
+    required: false
+    default: '0'
+  characters_transformed:
+    description: 'Number of characters transformed'
+    required: false
+    default: '0'
+runs:
+  using: 'composite'
+  steps:
+    - run: |
+        echo "Reporting usage metrics:"
+        echo "Files processed: ${{ inputs.files_processed }}"
+        echo "Words transformed: ${{ inputs.words_transformed }}"
+        echo "Characters transformed: ${{ inputs.characters_transformed }}"
+        
+        # In a real implementation, you would call an API here
+        # curl -X POST https://api.comp-linguistics.io/v1/usage -H "Content-Type: application/json" -d '{...}'
+      shell: bash

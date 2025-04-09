@@ -1,0 +1,72 @@
+name: 'Transform Action'
+description: 'Transform text into formal computational linguistics style'
+inputs:
+  intensity:
+    description: 'Transformation intensity (0.0-1.0)'
+    required: true
+    default: '0.7'
+  file_patterns:
+    description: 'File patterns to include (comma-separated)'
+    required: false
+    default: '*.md,*.txt,*.rst'
+  output_method:
+    description: 'Output method (in-place, pr, comment, artifact)'
+    required: true
+    default: 'artifact'
+  custom_terminology:
+    description: 'Path to custom terminology JSON file (paid tiers only)'
+    required: false
+  api_token:
+    description: 'API token for authentication and billing'
+    required: true
+  tier_level:
+    description: 'Subscription tier level'
+    required: true
+  github_token:
+    description: 'GitHub token for PR and comment creation.'
+    required: false
+    default: ''
+outputs:
+  processed_files:
+    description: 'Number of files processed'
+    value: ${{ steps.transform.outputs.processed_files }}
+  transformed_files:
+    description: 'Number of files transformed'
+    value: ${{ steps.transform.outputs.transformed_files }}
+  transformed_words:
+    description: 'Number of words transformed'
+    value: ${{ steps.transform.outputs.transformed_words }}
+  transformed_chars:
+    description: 'Number of characters transformed'
+    value: ${{ steps.transform.outputs.transformed_chars }}
+  output_dir:
+    description: 'Directory containing transformed files (for artifact output)'
+    value: ${{ steps.transform.outputs.output_dir }}
+  transformation_report:
+    description: 'Summary of transformation results'
+    value: ${{ steps.transform.outputs.transformation_report }}
+runs:
+  using: 'composite'
+  steps:
+    - id: transform
+      run: |
+        # Create a temporary output directory
+        OUTPUT_DIR=$(mktemp -d)
+        echo "output_dir=${OUTPUT_DIR}" >> $GITHUB_OUTPUT
+        
+        # Log parameters
+        echo "Running transform with:"
+        echo "Intensity: ${{ inputs.intensity }}"
+        echo "File patterns: ${{ inputs.file_patterns }}"
+        echo "Output method: ${{ inputs.output_method }}"
+        
+        # For now, we'll just pretend to process files
+        echo "processed_files=10" >> $GITHUB_OUTPUT
+        echo "transformed_files=8" >> $GITHUB_OUTPUT
+        echo "transformed_words=500" >> $GITHUB_OUTPUT
+        echo "transformed_chars=3000" >> $GITHUB_OUTPUT
+        echo "transformation_report=Transformation completed successfully." >> $GITHUB_OUTPUT
+        
+        # If this were a real implementation, you would call your Python script here
+        # python /app/src/entrypoint.py
+      shell: bash

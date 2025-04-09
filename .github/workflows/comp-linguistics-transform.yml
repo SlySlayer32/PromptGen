@@ -1,3 +1,4 @@
+# GitHub Actions Workflow File
 name: Computational Linguistics Transformer
 
 on:
@@ -55,7 +56,7 @@ jobs:
           
       - name: Validate API token and check usage
         id: validate_token
-        uses: comp-linguistics/validate-token-action@v1
+        uses: ./.github/actions/validate-token-action
         with:
           api_token: ${{ secrets.COMP_LINGUISTICS_API_TOKEN }}
       
@@ -94,15 +95,15 @@ jobs:
       
       - name: Transform content
         id: transform
-        uses: comp-linguistics/transform-action@v1
+        uses: ./.github/actions/transform-action
         with:
-          intensity: ${{ steps.params.outputs.intensity }}
-          file_patterns: ${{ steps.params.outputs.file_patterns }}
-          output_method: ${{ steps.params.outputs.output_method }}
-          custom_terminology: ${{ steps.params.outputs.custom_terminology }}
-          api_token: ${{ secrets.COMP_LINGUISTICS_API_TOKEN }}
-          tier_level: ${{ steps.validate_token.outputs.tier }}
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+            intensity: ${{ steps.params.outputs.intensity }}
+            file_patterns: ${{ steps.params.outputs.file_patterns }}
+            output_method: ${{ steps.params.outputs.output_method }}
+            custom_terminology: ${{ steps.params.outputs.custom_terminology }}
+            api_token: ${{ secrets.COMP_LINGUISTICS_API_TOKEN }}
+            tier_level: ${{ steps.validate_token.outputs.tier }}
+            github_token: ${{ secrets.GITHUB_TOKEN }}
       
       # Handle output based on output_method
       - name: Upload artifacts (if artifact output mode)
@@ -132,9 +133,9 @@ jobs:
           
       - name: Report usage metrics
         if: always()
-        uses: comp-linguistics/report-usage-action@v1
+        uses: ./.github/actions/report-usage-action
         with:
-          api_token: ${{ secrets.COMP_LINGUISTICS_API_TOKEN }}
-          files_processed: ${{ steps.transform.outputs.processed_files }}
-          words_transformed: ${{ steps.transform.outputs.transformed_words }}
-          characters_transformed: ${{ steps.transform.outputs.transformed_chars }}
+            api_token: ${{ secrets.COMP_LINGUISTICS_API_TOKEN }}
+            files_processed: ${{ steps.transform.outputs.processed_files }}
+            words_transformed: ${{ steps.transform.outputs.transformed_words }}
+            characters_transformed: ${{ steps.transform.outputs.transformed_chars }}

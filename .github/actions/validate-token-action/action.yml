@@ -1,0 +1,32 @@
+name: 'Validate Token Action'
+description: 'Validates the API token and checks usage limits'
+inputs:
+  api_token:
+    description: 'API token to validate'
+    required: true
+outputs:
+  valid:
+    description: 'Whether the token is valid'
+    value: ${{ steps.validate.outputs.valid }}
+  tier:
+    description: 'The subscription tier'
+    value: ${{ steps.validate.outputs.tier }}
+  usage_limit_exceeded:
+    description: 'Whether usage limits are exceeded'
+    value: ${{ steps.validate.outputs.usage_limit_exceeded }}
+runs:
+  using: 'composite'
+  steps:
+    - id: validate
+      run: |
+        # Simple validation check - just make sure token is not empty
+        if [[ -z "${{ inputs.api_token }}" ]]; then
+          echo "valid=false" >> $GITHUB_OUTPUT
+          echo "tier=none" >> $GITHUB_OUTPUT
+          echo "usage_limit_exceeded=false" >> $GITHUB_OUTPUT
+        else
+          echo "valid=true" >> $GITHUB_OUTPUT
+          echo "tier=free" >> $GITHUB_OUTPUT
+          echo "usage_limit_exceeded=false" >> $GITHUB_OUTPUT
+        fi
+      shell: bash

@@ -1,4 +1,6 @@
 FROM python:3.11-slim-bookworm
+
+# Separate each LABEL on its own line for clarity
 LABEL maintainer="CompLinguistics <support@comp-linguistics.io>"
 LABEL org.opencontainers.image.source="https://github.com/comp-linguistics/transform-action"
 LABEL org.opencontainers.image.description="Transforms text into formal computational linguistics style"
