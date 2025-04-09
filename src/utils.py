@@ -5,44 +5,70 @@ import logging
 import fnmatch
 import requests
 from datetime import datetime
+from typing import List, Optional, Dict, Any, Union
 
-def setup_logging():
+# Constants
+LOG_FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+
+def setup_logging(name: str = "transformer") -> logging.Logger:
     """Set up logging configuration."""
-    logger = logging.getLogger()
-    logger.setLevel(logging.INFO)
+    logger = logging.getLogger(name)
     
-    handler = logging.StreamHandler(sys.stdout)
-    handler.setLevel(logging.INFO)
+    # Add configurable logging levels
+    log_level = os.getenv('LOG_LEVEL', 'INFO').upper()
+    logger.setLevel(getattr(logging, log_level, logging.INFO))
     
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    handler.setFormatter(formatter)
-    
-    logger.addHandler(handler)
+    # Only add handler if not already added
+    if not logger.handlers:
+        handler = logging.StreamHandler(sys.stdout)
+        handler.setLevel(logging.INFO)
+        
+        formatter = logging.Formatter(LOG_FORMAT)
+        handler.setFormatter(formatter)
+        
+        logger.addHandler(handler)
     
     return logger
 
-def set_output(name, value):
+def set_output(name: str, value: str) -> None:
     """Set GitHub Actions output variable."""
+    # Mask sensitive data
+    if name.lower() == 'api_token':
+        value = '***MASKED***'
+    
     # GitHub Actions environment file
     github_output = os.getenv('GITHUB_OUTPUT')
     if github_output:
-        with open(github_output, 'a') as f:
-            f.write(f"{name}={value}\n")
+        try:
+            with open(github_output, 'a') as f:
+                f.write(f"{name}={value}\n")
+        except IOError as e:
+            print(f"Error writing to GITHUB_OUTPUT: {e}")
+            # Fallback to stdout
+            print(f"::set-output name={name}::{value}")
     else:
         # Fallback for testing outside GitHub Actions
         print(f"::set-output name={name}::{value}")
 
-def filter_files(files, exclude_patterns):
+def filter_files(files: List[str], exclude_patterns: Optional[List[str]] = None) -> List[str]:
     """
     Filter files based on exclude patterns.
     
     Args:
-        files (list): List of file paths
-        exclude_patterns (list): List of glob patterns to exclude
+        files (List[str]): List of file paths
+        exclude_patterns (Optional[List[str]]): List of glob patterns to exclude
         
     Returns:
-        list: Filtered list of file paths
+        List[str]: Filtered list of file paths
     """
+    if not isinstance(files, list) or not all(isinstance(f, str) for f in files):
+        raise TypeError("files must be a list of strings")
+    
+    if exclude_patterns is None:
+        exclude_patterns = []
+    elif not isinstance(exclude_patterns, list):
+        raise TypeError("exclude_patterns must be a list of strings")
+        
     if not exclude_patterns:
         return files
         
@@ -58,12 +84,12 @@ def filter_files(files, exclude_patterns):
     
     return filtered_files
 
-def create_report(results):
+def create_report(results: Dict[str, Any]) -> str:
     """
     Create a markdown report of transformation results.
     
     Args:
-        results (dict): Transformation results
+        results (Dict[str, Any]): Transformation results
         
     Returns:
         str: Markdown formatted report
@@ -99,7 +125,14 @@ def create_report(results):
     
     return "\n".join(report)
 
-def report_usage(api_token, tier_level, files_processed, files_transformed, words_transformed, chars_transformed):
+def report_usage(
+    api_token: str, 
+    tier_level: str, 
+    files_processed: int, 
+    files_transformed: int, 
+    words_transformed: int, 
+    chars_transformed: int
+) -> None:
     """
     Report usage statistics to the API for billing and analytics.
     
@@ -111,6 +144,8 @@ def report_usage(api_token, tier_level, files_processed, files_transformed, word
         words_transformed (int): Number of words transformed
         chars_transformed (int): Number of characters transformed
     """
+    logger = logging.getLogger("transformer")
+    
     try:
         # Prepare usage data
         usage_data = {
@@ -134,11 +169,8 @@ def report_usage(api_token, tier_level, files_processed, files_transformed, word
         )
         
         if response.status_code != 200:
-            logger = logging.getLogger()
             logger.warning(f"Failed to report usage: {response.status_code} - {response.text}")
             
     except Exception as e:
         # Don't fail the action if usage reporting fails
-        logger = logging.getLogger()
         logger.warning(f"Error reporting usage: {str(e)}")
-        pass

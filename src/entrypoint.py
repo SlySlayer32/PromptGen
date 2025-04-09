@@ -12,17 +12,56 @@ import yaml
 from github import Github
 from tqdm import tqdm
 import git
+from typing import List, Dict, Any
 
 # Import our transformer module
 from transformer import CompLinguisticsTransformer
 from utils import setup_logging, set_output, filter_files, create_report, report_usage
 
+# Version information
+__version__ = '1.0.0'
+
 # Set up logging
 logger = setup_logging()
 
-def parse_args():
+def check_dependencies() -> None:
+    """Verify that all required dependencies are available."""
+    required_modules = ['requests', 'yaml', 'github', 'tqdm', 'git']
+    missing_modules = []
+    
+    for module in required_modules:
+        try:
+            __import__(module)
+        except ImportError:
+            missing_modules.append(module)
+    
+    if missing_modules:
+        logger.error(f"Missing required dependencies: {', '.join(missing_modules)}")
+        logger.error("Please install them using: pip install " + " ".join(missing_modules))
+        sys.exit(1)
+    
+    # Add a requirements.txt file creation suggestion
+    logger.info("Consider creating a requirements.txt file for dependency management.")
+
+def validate_token(token: str, token_name: str) -> bool:
+    """Basic validation for API tokens."""
+    if not token:
+        logger.error(f"{token_name} cannot be empty")
+        return False
+    
+    # Basic validation - tokens are typically at least 10 chars
+    if len(token) < 10:
+        logger.warning(f"{token_name} seems too short, it might be invalid")
+        return False
+    
+    return True
+
+def parse_args() -> argparse.Namespace:
     """Parse command line arguments with validation."""
     parser = argparse.ArgumentParser(description='Transform text into computational linguistics style')
+    
+    parser.add_argument('--version', action='version', 
+                        version=f'%(prog)s {__version__}')
     
     parser.add_argument('--intensity', type=float, default=0.7,
                         help='Transformation intensity (0.0-1.0). Must be between 0.0 and 1.0.')
@@ -40,14 +79,17 @@ def parse_args():
     parser.add_argument('--custom-terminology', type=str, default='',
                         help='Path to custom terminology JSON file.')
     
-    parser.add_argument('--api-token', type=str, required=True,
-                        help='API token for authentication and billing.')
+    parser.add_argument('--api-token', type=str, 
+                        default=os.environ.get('API_TOKEN'),
+                        help='API token for authentication and billing. Can also be set via API_TOKEN environment variable.')
     
-    parser.add_argument('--tier-level', type=str, required=True,
-                        help='Subscription tier level.')
+    parser.add_argument('--tier-level', type=str, 
+                        default=os.environ.get('TIER_LEVEL'),
+                        help='Subscription tier level. Can also be set via TIER_LEVEL environment variable.')
     
-    parser.add_argument('--github-token', type=str, default='',
-                        help='GitHub token for PR and comment creation.')
+    parser.add_argument('--github-token', type=str, 
+                        default=os.environ.get('GITHUB_TOKEN', ''),
+                        help='GitHub token for PR and comment creation. Can also be set via GITHUB_TOKEN environment variable.')
     
     args = parser.parse_args()
 
@@ -57,6 +99,18 @@ def parse_args():
 
     if args.custom_terminology and not Path(args.custom_terminology).is_file():
         parser.error(f"--custom-terminology file '{args.custom_terminology}' does not exist or is not a valid file.")
+    
+    # Validate required arguments
+    if not args.api_token:
+        parser.error("--api-token is required or set API_TOKEN environment variable")
+    
+    if not args.tier_level:
+        parser.error("--tier-level is required or set TIER_LEVEL environment variable")
+    
+    # Validate token formats
+    validate_token(args.api_token, "API token")
+    if args.github_token:
+        validate_token(args.github_token, "GitHub token")
     
     return args
 
@@ -69,7 +123,7 @@ def process_files(file_patterns, exclude_patterns):
         return included_files
     except Exception as e:
         logger.error(f"Error filtering files: {e}")
-        sys.exit(1)
+        return []  # Return an empty list instead of exiting
 
 def main():
     """Main function to handle the transformation process."""

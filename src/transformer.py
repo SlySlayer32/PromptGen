@@ -4,6 +4,10 @@ import logging
 import nltk
 from nltk.tokenize import word_tokenize, sent_tokenize
 from nltk.tag import pos_tag
+from typing import Dict, Optional, Any, Tuple
+
+# Constants
+DEFAULT_INTENSITY = 0.7
 
 logger = logging.getLogger(__name__)
 
@@ -11,14 +15,28 @@ class CompLinguisticsTransformer:
     """
     A class for transforming ordinary text into computational linguistics style.
     """
+    # Class constants
+    MIN_INTENSITY = 0.0
+    MAX_INTENSITY = 1.0
     
-    def __init__(self, custom_terminology=None):
+    def __init__(self, custom_terminology: Optional[Dict[str, str]] = None):
         """
         Initialize the transformer with default or custom terminology.
         
         Args:
             custom_terminology (dict, optional): Custom terminology mapping.
         """
+        logger.debug("Initializing CompLinguisticsTransformer")
+        
+        # Check if required NLTK data is available
+        try:
+            nltk.data.find('tokenizers/punkt')
+            nltk.data.find('taggers/averaged_perceptron_tagger')
+        except LookupError:
+            logger.warning("NLTK data not found. Downloading required packages...")
+            nltk.download('punkt')
+            nltk.download('averaged_perceptron_tagger')
+        
         # Default technical term mappings
         self.term_mapping = {
             # Verbs
@@ -51,31 +69,22 @@ class CompLinguisticsTransformer:
             "info": "metadata",
             "folders": "directory hierarchy",
             "structure": "architectural schema",
-            
-            # Adjectives
-            "first": "initial",
-            "important": "critical",
-            "main": "primary",
-            "clear": "explicit",
-            "good": "optimal",
-            "bad": "suboptimal",
-            "new": "subsequent",
-            
-            # Phrases
-            "look for": "identify instances of",
-            "go through": "traverse the lexical structure of",
-            "set up": "initialize the configuration parameters for",
-            "find out": "determine through systematic analysis",
-            "write down": "document in structured format",
-            "keep track of": "maintain referential integrity for",
-            "make sure": "ensure syntactic validity of",
-            "pay attention to": "maintain semantic focus on",
-            "next steps": "subsequent procedural elements",
         }
         
         # Update with custom terminology if provided
         if custom_terminology and isinstance(custom_terminology, dict):
+            # Validate that all keys and values are strings
+            invalid_entries = [(k, v) for k, v in custom_terminology.items() 
+                              if not isinstance(k, str) or not isinstance(v, str)]
+            if invalid_entries:
+                logger.warning(f"Ignoring {len(invalid_entries)} invalid entries in custom_terminology")
+                custom_terminology = {k: v for k, v in custom_terminology.items() 
+                                     if isinstance(k, str) and isinstance(v, str)}
             self.term_mapping.update(custom_terminology)
+        
+        logger.debug(f"Transformer initialized with {len(self.term_mapping)} term mappings")
+        if custom_terminology:
+            logger.debug(f"Added {len(custom_terminology)} custom terms")
         
         # Technical domain nouns to insert for added complexity
         self.technical_nouns = [
@@ -154,6 +163,9 @@ class CompLinguisticsTransformer:
         Returns:
             str: Text with replaced terms
         """
+        # Precompute multi-word phrases for faster lookup
+        multi_word_phrases = {phrase: replacement for phrase, replacement in self.term_mapping.items() if ' ' in phrase}
+        
         tokens = word_tokenize(text)
         tagged = pos_tag(tokens)
         
@@ -164,10 +176,10 @@ class CompLinguisticsTransformer:
             phrase_found = False
             for j in range(min(4, len(tokens) - i), 0, -1):
                 phrase = ' '.join(tokens[i:i+j]).lower()
-                if phrase in self.term_mapping:
+                if phrase in multi_word_phrases:
                     # Apply replacement based on intensity
                     if random.random() < intensity:
-                        new_tokens.append(self.term_mapping[phrase])
+                        new_tokens.append(multi_word_phrases[phrase])
                     else:
                         new_tokens.extend(tokens[i:i+j])
                     i += j

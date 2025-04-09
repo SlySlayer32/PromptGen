@@ -38,7 +38,7 @@ inputs:
     required: true
   
   github_token:
-    description: 'GitHub token for PR and comment creation'
+    description: 'GitHub token for PR and comment creation. Should be stored as a secret.'
     required: false
     default: ''
 
