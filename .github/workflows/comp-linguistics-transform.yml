@@ -108,10 +108,10 @@ jobs:
       # Handle output based on output_method
       - name: Upload artifacts (if artifact output mode)
         if: steps.params.outputs.output_method == 'artifact'
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v3.1.3
         with:
-          name: transformed-content
-          path: ${{ steps.transform.outputs.output_dir }}
+         name: transformed-content
+         path: ${{ steps.transform.outputs.output_dir }}
           
       - name: Create PR with changes (if PR output mode)
         if: steps.params.outputs.output_method == 'pr'
